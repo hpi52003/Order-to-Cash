@@ -6,7 +6,7 @@ RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
-# Backend + serve frontend
+# Backend
 FROM python:3.11-slim
 WORKDIR /app
 
@@ -14,10 +14,12 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ ./backend/
-COPY data/o2c.db ./data/o2c.db
-COPY data/graph_data.json ./data/graph_data.json
+COPY data/ ./data/
 
-# Copy frontend built files from Build frontend stage
+# Generate o2c.db from JSON files
+RUN python -m backend.ingest
+
+# Copy frontend built files
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
 EXPOSE 10000
