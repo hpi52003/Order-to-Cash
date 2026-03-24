@@ -1,17 +1,10 @@
 services:
   - type: web
-    name: o2c-graph-backend
-    runtime: python3
+    name: o2c-graph
+    runtime: docker
     region: oregon
     plan: free
-    buildCommand: pip install -r requirements.txt && python -m backend.ingest
-    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: GROQ_API_KEY
         sync: false
 
-  - type: static
-    name: o2c-graph-frontend
-    region: oregon
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: frontend/dist
