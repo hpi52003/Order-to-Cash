@@ -1,3 +1,5 @@
+
+
 """
 main.py — FastAPI backend for O2C Graph Explorer
 Run: uvicorn backend.main:app --reload --port 8000
@@ -8,6 +10,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException # type: ignore
 from fastapi.middleware.cors import CORSMiddleware # type: ignore
+from fastapi.staticfiles import StaticFiles # type: ignore   ← ADD THIS
 from pydantic import BaseModel # type: ignore
 
 from backend.graph_builder import load_graph, get_neighbors, G
@@ -67,3 +70,6 @@ def get_node(node_id: str):
 def chat(req: ChatRequest):
     result = ask(req.message, req.history)
     return result
+
+# Serve frontend 
+app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")  
