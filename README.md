@@ -48,5 +48,4 @@ Key edges:
 5. uvicorn backend.main:app --reload --port 8000
 6. cd frontend && npm install && npm run dev
 
-## AI Coding Session Logs
-See /sessions/ folder - full Claude conversation transcript from building this system.
+
