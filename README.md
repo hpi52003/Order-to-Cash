@@ -20,7 +20,7 @@ Two-pass architecture:
 - Pass 2: SQL results → natural language business summary
 
 Self-healing: SQL errors are fed back to the LLM for one correction attempt.
-Model: claude-3-5-haiku-20241022 (fast, free-tier friendly)
+Model: Groq llama-3.3-70b-versatile (fast, free-tier friendly)
 
 ## Guardrails
 
