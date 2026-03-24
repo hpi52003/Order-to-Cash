@@ -42,7 +42,7 @@ Key edges:
 ## How to Run Locally
 
 1. pip install -r requirements.txt
-2. cp .env.example .env  (add ANTHROPIC_API_KEY)
+2. Consider .env file (add API_KEY)
 3. Place sap-o2c-data/ in data/ folder
 4. python -m backend.ingest
 5. uvicorn backend.main:app --reload --port 8000
