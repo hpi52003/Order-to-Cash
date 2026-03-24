@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: o2c-graph-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt && python -m backend.ingest
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+    rootDir: .
+
+  - type: static
+    name: o2c-graph-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    rootDir: .
