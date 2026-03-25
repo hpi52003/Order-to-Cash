@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./backend/
 COPY data/ ./data/
 
-# Generate o2c.db from CSV files
+# Generate o2c.db from JSON files
 RUN python -m backend.ingest
 
 # Copy frontend built files
