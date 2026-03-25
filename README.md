@@ -2,7 +2,8 @@
 
 A graph-based explorer for SAP Order-to-Cash data with a natural language chat interface powered by Groq.
 
-## Live Demo
+## Live Demo URL (using Render)
+https://o2c-graph-dlt7.onrender.com/
 
 
 
