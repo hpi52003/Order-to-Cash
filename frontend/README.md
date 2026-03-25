@@ -9,9 +9,10 @@ React frontend for the O2C Graph Explorer built with Vite.
 - Axios — for API calls
 
 ## Run locally
-cd frontend
-npm install
-npm run dev
+- cd frontend
+- npm install
+- npm run dev
+
 
 ## Build
 npm run build
