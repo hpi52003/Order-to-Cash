@@ -65,8 +65,8 @@ def chat(req: ChatRequest):
     result = ask(req.message, req.history)
     return result
 
-# Serve frontend ← ADD THIS LINE
-app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")  # ← ADD THIS LINE'''
+# To Serve frontend added the below line according to the Dockerfile 
+app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")  
 
 
 
