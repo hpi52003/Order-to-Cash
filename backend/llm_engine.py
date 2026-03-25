@@ -73,26 +73,15 @@ plants:
   plant, companyCode, plantName
 
 KEY JOIN PATHS:
-- sales_order_items.salesOrder = sales_order_headers.salesOrder
-- outbound_delivery_items.referenceSdDocument = sales_order_headers.salesOrder
-- outbound_delivery_items.deliveryDocument = outbound_delivery_headers.deliveryDocument
-- billing_document_items.referenceSdDocument = outbound_delivery_headers.deliveryDocument
-- billing_document_items.billingDocument = billing_document_headers.billingDocument
-- billing_document_headers.accountingDocument = journal_entries.accountingDocument
-- billing_document_headers.accountingDocument = payments.invoiceReference
-- billing_document_headers.billingDocument = billing_document_cancellations.cancelledBillingDocument
-- business_partners.customer = sales_order_headers.soldToParty
-- products.product = sales_order_items.material
-
-FULL TRACE PATH (Sales Order → Delivery → Billing → Payment):
-  sales_order_headers
-    JOIN sales_order_items ON sales_order_items.salesOrder = sales_order_headers.salesOrder
-    JOIN outbound_delivery_items ON outbound_delivery_items.referenceSdDocument = sales_order_headers.salesOrder
-    JOIN outbound_delivery_headers ON outbound_delivery_headers.deliveryDocument = outbound_delivery_items.deliveryDocument
-    JOIN billing_document_items ON billing_document_items.referenceSdDocument = outbound_delivery_headers.deliveryDocument
-    JOIN billing_document_headers ON billing_document_headers.billingDocument = billing_document_items.billingDocument
-    JOIN journal_entries ON journal_entries.accountingDocument = billing_document_headers.accountingDocument
-    JOIN payments ON payments.invoiceReference = billing_document_headers.accountingDocument
+- sales_order_items.salesOrder → sales_order_headers.salesOrder
+- outbound_delivery_items.referenceSdDocument → sales_order_items.salesOrder
+- outbound_delivery_items.referenceSdDocumentItem → sales_order_items.salesOrderItem
+- billing_document_items.referenceSdDocument → sales_order_items.salesOrder
+- billing_document_headers.accountingDocument → journal_entries.accountingDocument
+- billing_document_headers.accountingDocument → payments.invoiceReference
+- billing_document_headers.billingDocument → billing_document_cancellations.cancelledBillingDocument
+- business_partners.customer → sales_order_headers.soldToParty
+- products.product → sales_order_items.material
 """
 
 SYSTEM_PROMPT_SQL = f"""You are a precise SQL analyst for a SAP Order-to-Cash (O2C) dataset.
@@ -269,6 +258,10 @@ if __name__ == "__main__":
         print(f"SQL: {r['sql']}")
         print(f"Answer: {r['answer']}")
         print(f"Rows: {len(r['data'])}")
+  
+    
+
+   
 
 
 
