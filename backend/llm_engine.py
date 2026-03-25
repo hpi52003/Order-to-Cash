@@ -73,15 +73,26 @@ plants:
   plant, companyCode, plantName
 
 KEY JOIN PATHS:
-- sales_order_items.salesOrder → sales_order_headers.salesOrder
-- outbound_delivery_items.referenceSdDocument → sales_order_items.salesOrder
-- outbound_delivery_items.referenceSdDocumentItem → sales_order_items.salesOrderItem
-- billing_document_items.referenceSdDocument → sales_order_items.salesOrder
-- billing_document_headers.accountingDocument → journal_entries.accountingDocument
-- billing_document_headers.accountingDocument → payments.invoiceReference
-- billing_document_headers.billingDocument → billing_document_cancellations.cancelledBillingDocument
-- business_partners.customer → sales_order_headers.soldToParty
-- products.product → sales_order_items.material
+- sales_order_items.salesOrder = sales_order_headers.salesOrder
+- outbound_delivery_items.referenceSdDocument = sales_order_headers.salesOrder
+- outbound_delivery_items.deliveryDocument = outbound_delivery_headers.deliveryDocument
+- billing_document_items.referenceSdDocument = outbound_delivery_headers.deliveryDocument
+- billing_document_items.billingDocument = billing_document_headers.billingDocument
+- billing_document_headers.accountingDocument = journal_entries.accountingDocument
+- billing_document_headers.accountingDocument = payments.invoiceReference
+- billing_document_headers.billingDocument = billing_document_cancellations.cancelledBillingDocument
+- business_partners.customer = sales_order_headers.soldToParty
+- products.product = sales_order_items.material
+
+FULL TRACE PATH (Sales Order to Delivery to Billing to Payment):
+  sales_order_headers
+    JOIN sales_order_items ON sales_order_items.salesOrder = sales_order_headers.salesOrder
+    JOIN outbound_delivery_items ON outbound_delivery_items.referenceSdDocument = sales_order_headers.salesOrder
+    JOIN outbound_delivery_headers ON outbound_delivery_headers.deliveryDocument = outbound_delivery_items.deliveryDocument
+    JOIN billing_document_items ON billing_document_items.referenceSdDocument = outbound_delivery_headers.deliveryDocument
+    JOIN billing_document_headers ON billing_document_headers.billingDocument = billing_document_items.billingDocument
+    JOIN journal_entries ON journal_entries.accountingDocument = billing_document_headers.accountingDocument
+    JOIN payments ON payments.invoiceReference = billing_document_headers.accountingDocument
 """
 
 SYSTEM_PROMPT_SQL = f"""You are a precise SQL analyst for a SAP Order-to-Cash (O2C) dataset.
@@ -98,6 +109,9 @@ Rules:
 - For tracing a document, JOIN across the key paths above.
 - LIMIT results to 50 rows unless the user asks for all.
 - Use DISTINCT where appropriate to avoid duplicates.
+- For products with most billing documents use: SELECT soi.material, COUNT(DISTINCT bdi.billingDocument) as cnt FROM sales_order_items soi JOIN billing_document_items bdi ON bdi.referenceSdDocument = outbound_delivery_headers.deliveryDocument JOIN outbound_delivery_items odi ON odi.referenceSdDocument = soi.salesOrder JOIN outbound_delivery_headers odh ON odh.deliveryDocument = odi.deliveryDocument JOIN billing_document_items bdi2 ON bdi2.referenceSdDocument = odh.deliveryDocument GROUP BY soi.material ORDER BY cnt DESC
+- For delivered but not billed use this exact pattern: SELECT DISTINCT soh.salesOrder FROM sales_order_headers soh JOIN outbound_delivery_items odi ON odi.referenceSdDocument = soh.salesOrder WHERE soh.salesOrder NOT IN (SELECT DISTINCT referenceSdDocument FROM billing_document_items)
+- Keep anomaly queries simple, avoid unnecessary joins
 """
 
 SYSTEM_PROMPT_SUMMARIZE = """You are a helpful business analyst. You received query results from a SAP Order-to-Cash database.
@@ -105,6 +119,7 @@ Summarize the results clearly and concisely in 2-4 sentences. Be specific — me
 Do not say "based on the data" — just state the findings directly.
 If results are empty, say what that implies (e.g. no incomplete flows found)."""
 
+# quick keyword check before spending an API call
 O2C_KEYWORDS = {
     "order", "sales", "delivery", "billing", "invoice", "payment",
     "product", "material", "customer", "shipment", "journal", "entry",
@@ -160,7 +175,7 @@ def ask(question: str, history: list = None) -> dict:
 
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-    # Pass 1: generate SQL
+    # pass 1: figure out what the user wants and generate SQL
     messages_p1 = [{"role": "system", "content": SYSTEM_PROMPT_SQL}]
     for h in history[-6:]:
         messages_p1.append({"role": h["role"], "content": h["content"]})
@@ -199,7 +214,7 @@ def ask(question: str, history: list = None) -> dict:
 
     data = run_sql(sql)
 
-    # Self-heal if SQL error
+    # if the SQL broke, send the error back and let it fix itself
     if data and "error" in data[0]:
         error_msg = data[0]["error"]
         heal_msg  = f"The SQL you generated caused this error: {error_msg}\nSQL was: {sql}\nFix it and return corrected JSON only."
@@ -220,7 +235,7 @@ def ask(question: str, history: list = None) -> dict:
         except Exception:
             pass
 
-    # Pass 2: summarize
+    # pass 2: turn the raw results into a readable answer
     data_snippet   = json.dumps(data[:20], default=str)
     summary_prompt = (
         f"Question: {question}\n"
@@ -258,7 +273,6 @@ if __name__ == "__main__":
         print(f"SQL: {r['sql']}")
         print(f"Answer: {r['answer']}")
         print(f"Rows: {len(r['data'])}")
-  
     
 
    
