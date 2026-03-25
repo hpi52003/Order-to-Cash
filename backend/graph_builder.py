@@ -1,10 +1,8 @@
 import sqlite3
-import json
 import os
 import networkx as nx # type: ignore
 
-DB_PATH        = os.path.join(os.path.dirname(__file__), "..", "data", "o2c.db")
-GRAPH_JSON_OUT = os.path.join(os.path.dirname(__file__), "..", "data", "graph_data.json")
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "o2c.db")
 
 # Node type → color (for frontend)
 TYPE_COLORS = {
@@ -85,7 +83,7 @@ def build_graph(conn: sqlite3.Connection):
                 _add_node(plant_nid, "Plant", f"Plant {row[4]}", {"plant": row[4]})
             _add_edge(del_nid, plant_nid, "SHIPS_FROM")
 
-    # Billing Document Headers 
+    # Billing Document Headers
     for row in cur.execute("""
         SELECT billingDocument, billingDocumentType, soldToParty,
                totalNetAmount, transactionCurrency,
@@ -100,7 +98,7 @@ def build_graph(conn: sqlite3.Connection):
             "isCancelled": row[6],
         })
 
-    # Billing Items → SO Item + Billing Header 
+    # Billing Items → SO Item + Billing Header
     for row in cur.execute("""
         SELECT billingDocument, referenceSdDocument,
                referenceSdDocumentItem, material
@@ -152,7 +150,7 @@ def build_graph(conn: sqlite3.Connection):
         if G.has_node(je_nid):
             _add_edge(nid, je_nid, "RECORDED_IN")
 
-    # Customers 
+    # Customers
     for row in cur.execute("""
         SELECT businessPartner, customer, businessPartnerFullName, industry
         FROM business_partners WHERE customer IS NOT NULL AND customer != ''
@@ -180,7 +178,6 @@ def build_graph(conn: sqlite3.Connection):
     # Products
     for row in cur.execute("SELECT product, productType, productGroup, division FROM products"):
         nid = f"PRD:{row[0]}"
-        # Get description if available
         _add_node(nid, "Product", f"Product {row[0]}", {
             "product": row[0], "type": row[1],
             "group": row[2], "division": row[3],
@@ -207,48 +204,6 @@ def build_graph(conn: sqlite3.Connection):
             })
         if G.has_node(bd_nid):
             _add_edge(canc_nid, bd_nid, "CANCELS")
-
-
-def export_graph_json(max_nodes=300):
-    """Export a sample of the graph as JSON for frontend rendering."""
-    # Priority: headers over items (shorter IDs first as proxy)
-    priority_types = ["Customer", "SalesOrder", "Delivery",
-                  "BillingDocument", "JournalEntry", "Payment",
-                  "Product", "Plant", "Cancellation"]
-
-    selected = []
-    for ptype in priority_types:
-        nodes = [n for n, d in G.nodes(data=True) if d.get("type") == ptype]
-        selected.extend(nodes)
-        if len(selected) >= max_nodes:
-            break
-    selected = selected[:max_nodes]
-    selected_set = set(selected)
-
-    nodes_out = []
-    for nid in selected:
-        d = G.nodes[nid]
-        nodes_out.append({
-            "id":    nid,
-            "type":  d.get("type"),
-            "label": d.get("label"),
-            "color": d.get("color", "#888"),
-            "meta":  d.get("meta", {}),
-        })
-
-    edges_out = []
-    for src, dst, data in G.edges(data=True):
-        if src in selected_set and dst in selected_set:
-            edges_out.append({
-                "source":   src,
-                "target":   dst,
-                "relation": data.get("relation", ""),
-            })
-
-    with open(GRAPH_JSON_OUT, "w") as f:
-        json.dump({"nodes": nodes_out, "edges": edges_out}, f)
-
-    return len(nodes_out), len(edges_out)
 
 
 def get_neighbors(node_id: str) -> dict:
@@ -284,6 +239,7 @@ def load_graph():
 
 if __name__ == "__main__":
     load_graph()
+
 
 
 
