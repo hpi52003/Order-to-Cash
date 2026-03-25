@@ -15,4 +15,4 @@ React frontend for the O2C Graph Explorer built with Vite.
 
 
 ## Build
-npm run build
+- npm run build
