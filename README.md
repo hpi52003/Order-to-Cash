@@ -17,7 +17,7 @@ LLMs generate SQL reliably. Cypher (Neo4j's query language) is less common in tr
 
 ## How the LLM works
 
-Two calls per question. The first call takes the user's question and returns a SQL query with an intent label — query, trace, anomaly, or off_topic. The second call takes the SQL results and writes a plain English summary. If the first SQL query throws an error it gets sent back to the model once for a correction attempt before failing.
+Two calls per question. The first call takes the user's question and returns a SQL query with an intent label a query, trace, anomaly, or off_topic. The second call takes the SQL results and writes a plain English summary. If the first SQL query throws an error it gets sent back to the model once for a correction attempt before failing.
 
 Model used: llama-3.3-70b-versatile via Groq free tier.
 
