@@ -1,4 +1,3 @@
-
 import sqlite3
 import json
 import os
@@ -210,13 +209,9 @@ def build_graph(conn: sqlite3.Connection):
             _add_edge(canc_nid, bd_nid, "CANCELS")
 
 
-#def export_graph_json(max_nodes=800):
 def export_graph_json(max_nodes=300):
     """Export a sample of the graph as JSON for frontend rendering."""
     # Priority: headers over items (shorter IDs first as proxy)
-    '''priority_types = ["Customer", "SalesOrder", "Delivery",
-                      "BillingDocument", "JournalEntry", "Payment",
-                      "Product", "Plant", "Cancellation"]'''
     priority_types = ["Customer", "SalesOrder", "Delivery",
                   "BillingDocument", "JournalEntry", "Payment",
                   "Product", "Plant", "Cancellation"]
@@ -279,15 +274,19 @@ def get_neighbors(node_id: str) -> dict:
 
 
 def load_graph():
-    """Build graph from DB — called once at server startup."""
+    # build the graph once at startup from the SQLite database
     conn = sqlite3.connect(DB_PATH)
     build_graph(conn)
     conn.close()
-    n_nodes, n_edges = export_graph_json()
     print(f"Graph loaded: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
-    print(f"Exported sample: {n_nodes} nodes, {n_edges} edges → graph_data.json")
     return G
 
 
 if __name__ == "__main__":
     load_graph()
+
+
+
+
+
+   
