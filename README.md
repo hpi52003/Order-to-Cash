@@ -37,12 +37,12 @@ Key relationships:
 
 ## Run locally
 
-pip install -r requirements.txt
-# add your LLM API key to .env file (GROQ_API_KEY in this case)
-# place sap-o2c-data/ inside the data/ folder
-python -m backend.ingest
-uvicorn backend.main:app --reload --port 8000
-cd frontend && npm install && npm run dev
+-pip install -r requirements.txt
+-add your LLM API key to .env file (GROQ_API_KEY in this case)
+-place sap-o2c-data/ inside the data/ folder
+-python -m backend.ingest
+-uvicorn backend.main:app --reload --port 8000
+-cd frontend && npm install && npm run dev
 
 ## Deployment
 - Deployed on Render using a multi-stage Dockerfile
