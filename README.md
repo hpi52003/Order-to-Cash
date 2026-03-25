@@ -1,51 +1,51 @@
 # O2C Graph Explorer
 
-A context graph system with LLM-powered natural language query interface for SAP Order-to-Cash data.
+A graph-based explorer for SAP Order-to-Cash data with a natural language chat interface powered by Groq.
 
 ## Live Demo
-> Add your Render/Railway URL here after deployment
 
-## Architecture
 
-Frontend (React + ReactFlow) → FastAPI Backend → SQLite DB + NetworkX + Anthropic API
 
-## Database Choice: SQLite + NetworkX
+## What it does
 
-SQLite is zero-infrastructure and LLMs generate reliable SQL far more consistently than Cypher (Neo4j query language). NetworkX handles in-memory graph traversal for the 921-node/1063-edge visualization layer without needing a separate graph DB.
+The app ingests the SAP O2C dataset, builds a graph of interconnected business entities, and lets you ask questions about it in plain English. The system translates those questions into SQL, runs them against the database, and returns a readable answer.
 
-## LLM Prompting Strategy
+## Why SQLite and not Neo4j
 
-Two-pass architecture:
-- Pass 1: NL question → structured JSON with SQL + intent classification (query/trace/anomaly/off_topic)
-- Pass 2: SQL results → natural language business summary
+LLMs generate SQL reliably. Cypher (Neo4j's query language) is less common in training data and produces more errors in practice. Since the dataset fits comfortably in SQLite, there was no reason to add the overhead of a graph database. NetworkX handles the in-memory graph structure for visualization.
 
-Self-healing: SQL errors are fed back to the LLM for one correction attempt.
-Model: Groq llama-3.3-70b-versatile (fast, free-tier friendly)
+## How the LLM works
+
+Two calls per question. The first call takes the user's question and returns a SQL query with an intent label — query, trace, anomaly, or off_topic. The second call takes the SQL results and writes a plain English summary. If the first SQL query throws an error it gets sent back to the model once for a correction attempt before failing.
+
+Model used: llama-3.3-70b-versatile via Groq free tier.
 
 ## Guardrails
 
-1. Keyword pre-filter: rejects clearly off-topic queries before any API call
-2. LLM intent classification: returns off_topic intent for domain-irrelevant questions
-Response: "This system only answers questions about the Order-to-Cash dataset."
+Off-topic questions are filtered in two stages. First a keyword check rejects obvious non-dataset questions before making any API call. If something slips through, the LLM intent classification catches it and returns a standard rejection message.
 
 ## Graph Model
 
 Nodes: SalesOrder, Delivery, BillingDocument, JournalEntry, Payment, Customer, Product, Plant, Cancellation
 
-Key edges:
-- Customer PLACED SalesOrder
-- Delivery FULFILLS SalesOrderItem
-- BillingDocument BILLS SalesOrderItem  
-- BillingDocument HAS_JOURNAL JournalEntry
-- BillingDocument PAID_BY Payment
+Key relationships:
+- Customer → PLACED → SalesOrder
+- Delivery → FULFILLS → SalesOrderItem
+- BillingDocument → BILLS → SalesOrderItem
+- BillingDocument → HAS_JOURNAL → JournalEntry
+- BillingDocument → PAID_BY → Payment
 
-## How to Run Locally
+## Run locally
 
-1. pip install -r requirements.txt
-2. Consider .env file (add API_KEY)
-3. Place sap-o2c-data/ in data/ folder
-4. python -m backend.ingest
-5. uvicorn backend.main:app --reload --port 8000
-6. cd frontend && npm install && npm run dev
+pip install -r requirements.txt
+# add your LLM API key to .env file (GROQ_API_KEY in this case)
+# place sap-o2c-data/ inside the data/ folder
+python -m backend.ingest
+uvicorn backend.main:app --reload --port 8000
+cd frontend && npm install && npm run dev
 
-
+## Deployment
+- Deployed on Render using a multi-stage Dockerfile
+- Stage 1 builds the React frontend, Stage 2 sets up the Python backend and runs ingestion
+- Both served from a single container via FastAPI StaticFiles
+- LLM API key set as an environment variable in the Render dashboard
